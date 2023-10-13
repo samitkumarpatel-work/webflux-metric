@@ -1,0 +1,54 @@
+version: '3'
+
+services:
+  tempo:
+      image: grafana/tempo
+      extra_hosts: ['host.docker.internal:host-gateway']
+      command: [ "-config.file=/etc/tempo.yaml" ]
+      volumes:
+          - ./tempo.yaml:/etc/tempo.yaml:ro
+      ports:
+          - "14268"  # jaeger ingest
+          - "9411:9411" # zipkin
+
+  loki:
+      image: grafana/loki
+      extra_hosts: ['host.docker.internal:host-gateway']
+      command: [ "-config.file=/etc/loki/local-config.yaml" ]
+      ports:
+          - "3100:3100"                                   # loki needs to be exposed so it receives logs
+
+  prometheus:
+      image: prom/prometheus
+      extra_hosts: ['host.docker.internal:host-gateway']
+      command:
+          - --enable-feature=exemplar-storage
+          - --config.file=/etc/prometheus/prometheus.yml
+      volumes:
+          - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      ports:
+          - "9090:9090"
+
+  grafana:
+      image: grafana/grafana
+      extra_hosts: ['host.docker.internal:host-gateway']
+      volumes:
+          - ./datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
+          - ./dashboards:/etc/grafana/provisioning/dashboards:ro
+      environment:
+          - GF_AUTH_ANONYMOUS_ENABLED=true
+          - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+          - GF_AUTH_DISABLE_LOGIN_FORM=true
+      ports:
+          - "3000:3000"
+      depends_on:
+      - tempo
+      - prometheus
+      - loki
+  load-generator:
+      image: curlimages/curl:latest
+#      volumes:
+#          - ./hello-observability/load-generator.sh:/tmp/load-generator.sh
+      command: /bin/sh -c "echo Hello"
+# Prometheus: http://localhost:9090/
+# Grafana: http://localhost:3000/

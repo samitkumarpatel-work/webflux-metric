@@ -1,0 +1,10 @@
+spring:
+  application:
+    name: @project.name@
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+
