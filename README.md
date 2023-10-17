@@ -30,18 +30,22 @@ Summaries are similar to histograms in that they track distributions of an attri
 They are most commonly used for monitoring latencies (e.g. P50, P90, P99), and are best for use cases where an accurate latency value or sample is desired without configuration of histogram buckets. 
 
 
-When do I use counters?
+***When do I use counters?***
 
 When tracking continually increasing counts of events you’d use a counter metric. They are most often queried using the rate() function to view how often an event occurs over a given time period.
 
-When do I use gauges?
+***When do I use gauges?***
 
 To report the current state of a metric that can arbitrarily increase or decrease over time, for example as a metric for CPU utilization.
 
-What can histograms show?
+***What can histograms show?***
 
 These are showing the distribution of observations and putting those observations into pre-defined buckets. They are highly performant, and values can be accurately aggregated across both windows of time and across numerous time series. Note that both quantile and percentile calculations are done on the server side at query time.
 
-Why use summaries?
+***Why use summaries?***
 
 Summaries measure latencies and are best used where an accurate latency value is desired without configuration of histogram buckets. They are limited as they cannot accurately perform aggregations or averages across quantiles and can be costly in terms of required resources. Calculations are done on the application or service client side at metric collection time. 
+
+
+
+[Custom Metrics](https://docs.spring.io/spring-boot/docs/current/reference/html/actuator.html#actuator.metrics.registering-custom)
