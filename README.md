@@ -36,15 +36,15 @@ When tracking continually increasing counts of events you’d use a counter metr
 
 ***When do I use gauges?***
 
-To report the current state of a metric that can arbitrarily increase or decrease over time, for example as a metric for CPU utilization.
+Use a Gauge metric to represent a single numerical value that can go up or down. Gauges are often used for measuring system metrics like the current memory usage.
 
 ***What can histograms show?***
 
-These are showing the distribution of observations and putting those observations into pre-defined buckets. They are highly performant, and values can be accurately aggregated across both windows of time and across numerous time series. Note that both quantile and percentile calculations are done on the server side at query time.
+Use a Histogram metric to measure the distribution of values over time. Histograms allow you to collect data on the distribution of response times.
 
 ***Why use summaries?***
 
-Summaries measure latencies and are best used where an accurate latency value is desired without configuration of histogram buckets. They are limited as they cannot accurately perform aggregations or averages across quantiles and can be costly in terms of required resources. Calculations are done on the application or service client side at metric collection time. 
+Use a Summary metric for similar purposes as Histograms. They capture percentiles (e.g., 50th, 90th, 99th) and other statistics. 
 
 
 

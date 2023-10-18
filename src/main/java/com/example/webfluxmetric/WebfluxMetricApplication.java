@@ -1,14 +1,15 @@
 package com.example.webfluxmetric;
 
-import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
-import io.micrometer.core.instrument.binder.MeterBinder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.support.WebClientAdapter;
@@ -23,10 +24,8 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Dictionary;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Queue;
 
 
 @SpringBootApplication
@@ -37,48 +36,31 @@ public class WebfluxMetricApplication {
 	}
 
 	@Bean
-	public RouterFunction routerFunction() {
+	public RouterFunction routerFunction(UserService service) {
 		return RouterFunctions
 				.route()
-				.GET("/hello", this::hello)
-				.GET("/apicall", this::apiCall)
-				.GET("/apicall/{id}", this::apiCallById)
+				.GET("/hello", this::sayHello)
+				.path("/user", builder -> builder
+						.GET("", request -> ServerResponse.ok().body(service.getUsers(), User.class))
+						.GET("/{id}", request -> ServerResponse.ok().body(service.getUserById(request.pathVariable("id")), User.class))
+				)
 				.build();
 	}
 
-	@Bean
-	public MeterBinder queueSize(Queue queue) {
-		return (registry) -> Gauge.builder("queueSize", queue::size).register(registry);
-	}
-
-
-	private final UserClient userClient;
-	private final MeterRegistry registry;
-	private final List<String> list = new ArrayList<>();
-
-	private Mono<ServerResponse> apiCallById(ServerRequest request) {
-		var id = request.pathVariable("id");
-		System.out.println("list size: " + list.size());
-		registry.gauge("custom.apicallbyid.gauge", Tags.empty(), list.size());
-		registry.counter("custom.apicallbyid.counter", Tags.empty()).increment();
-
-//		registry.summary("custom.apicallbyid.summary", Tags.empty()).record(Integer.parseInt(id));
-//		registry.timer("custom.apicallbyid.timer", Tags.empty()).record(() -> Integer.parseInt(id));
-
-		return userClient
-				.getUserById(id)
-				.flatMap(ServerResponse.ok()::bodyValue);
-	}
-
-	private Mono<ServerResponse> apiCall(ServerRequest request) {
-		return ServerResponse.ok().body(userClient.getUsers(), User.class);
-	}
-
-	private Mono<ServerResponse> hello(ServerRequest request) {
+	private Mono<ServerResponse> sayHello(ServerRequest request) {
 		var name = request.queryParam("name").orElse("UNKNOWN");
-		registry.gauge("custom.hello.gauge", Tags.empty(), name.length());
 		return ServerResponse.ok().bodyValue("Hello " + name);
 	}
+}
+
+record User(String id, String name, String username, String email, String phone, String website) {}
+
+@HttpExchange(url = "/users")
+interface UserClient {
+	@GetExchange
+	Flux<User> getUsers();
+	@GetExchange(url = "/{id}")
+	Mono<User> getUserById(@PathVariable String id);
 }
 
 @Configuration
@@ -98,13 +80,25 @@ class ClientConfiguration {
 	}
 }
 
+@Service
+@RequiredArgsConstructor
+class UserService {
+	private final UserClient userClient;
+	private final MeterRegistry registry;
+	private static final List<String> db = new ArrayList<>(30);
+	public Flux<User> getUsers() {
+		registry.counter("custom.users.counter", Tags.empty()).increment();
+		return userClient.getUsers();
+	}
 
-record User(String id, String name, String username, String email, String phone, String website) {}
+	public Mono<User> getUserById(String id) {
 
-@HttpExchange(url = "/users")
-interface UserClient {
-	@GetExchange
-	Flux<User> getUsers();
-	@GetExchange(url = "/{id}")
-	Mono<User> getUserById(@PathVariable String id);
+		return userClient.getUserById(id)
+				.doOnNext(user -> db.removeAll(db.stream().toList()))
+				.doOnNext(user -> registry.counter("custom.user.counter", Tags.empty()).increment())
+				.doOnNext(user -> {
+					Arrays.stream(user.name().split("")).toList().stream().filter(StringUtils::hasText).forEach(db::add);
+					registry.gauge("custom.user.gauge", Tags.empty(), db, List::size);
+				});
+	}
 }

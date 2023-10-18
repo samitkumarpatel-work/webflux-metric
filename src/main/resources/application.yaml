@@ -12,4 +12,13 @@ management:
       percentiles-histogram:
         http.server.requests: true
         http.client.requests: true
+      percentiles:
+        http.server.requests: 0.95,0.99,1.00
+        http.client.requests: 0.95,0.99,1.00
+#    enable:
+#      http:
+#        client:
+#          requests: true
+#        server:
+#          requests: true
 

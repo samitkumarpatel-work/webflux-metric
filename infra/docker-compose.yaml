@@ -54,6 +54,12 @@ services:
           isDefault: true
           version: 1
           editable: false
+        - name: Prometheus
+          type: prometheus
+          uid: prometheus
+          access: proxy
+          url: http://prometheus:9090
+          editable: false
         EOF
         /run.sh
     image: grafana/grafana:latest
