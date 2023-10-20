@@ -37,10 +37,10 @@
 			<optional>true</optional>
 		</dependency>
 
-<!--		<dependency>-->
-<!--			<groupId>io.projectreactor</groupId>-->
-<!--			<artifactId>reactor-core-micrometer</artifactId>-->
-<!--		</dependency>-->
+		<dependency>
+			<groupId>io.projectreactor</groupId>
+			<artifactId>reactor-core-micrometer</artifactId>
+		</dependency>
 
 <!--		<dependency>-->
 <!--			<groupId>com.github.loki4j</groupId>-->

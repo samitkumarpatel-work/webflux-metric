@@ -1,8 +1,10 @@
 package com.example.webfluxmetric;
 
 import io.micrometer.core.instrument.DistributionSummary;
+import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
+import io.micrometer.observation.ObservationRegistry;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -85,6 +87,8 @@ class ClientConfiguration {
 class UserService {
 	private final UserClient userClient;
 	private final MeterRegistry registry;
+	private final ObservationRegistry observationRegistry;
+
 	private static final List<String> db = new ArrayList<>(30);
 	public Flux<User> getUsers() {
 		registry.counter("custom.users.counter", Tags.empty()).increment();
@@ -100,5 +104,8 @@ class UserService {
 					Arrays.stream(user.name().split("")).toList().stream().filter(StringUtils::hasText).forEach(db::add);
 					registry.gauge("custom.user.gauge", Tags.empty(), db, List::size);
 				});
+//				.name("")
+//				.tag("","")
+//				.tap(registry);
 	}
 }
